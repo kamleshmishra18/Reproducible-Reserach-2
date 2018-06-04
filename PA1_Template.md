@@ -45,8 +45,16 @@ names(stepperday)[1] ="Date"
 names(stepperday)[2] ="Total_Steps"
 head(stepperday,5)
 ```
+  
+    Date             Total_Steps
+  1 2012-10-01          NA
+  2 2012-10-02         126
+  3 2012-10-03       11352
+  4 2012-10-04       12116
+  5 2012-10-05       13294
 
-2. Histogram of the total number of steps taken each day
+
+1.  If you do not understand the difference between a histogram and a barplot, research the difference between them. Make a histogram of the total number of steps taken each day.
 
 ```{r}
 ggplot(stepperday, aes(x = Total_Steps)) +
@@ -54,16 +62,17 @@ ggplot(stepperday, aes(x = Total_Steps)) +
   labs(title = "Total Daily Steps", x = "Steps", y = "Frequency")
 ```
 
-3. Mean and median of the total number of steps taken per day
+1.  Calculate and report the mean and median of the total number of steps taken per day
 
 ```{r}
 mean(stepperday$Total_Steps, na.rm = TRUE)
 median(stepperday$Total_Steps, na.rm = TRUE)
 ```
 
-## Average daily activity pattern
+What is the average daily activity pattern?
+-------------------------------------------
+1.  Make a time series plot (i.e. 𝚝𝚢𝚙𝚎 = "𝚕") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
 
-### time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
 
 ```{r}
 rawdataNA <- is.na(rawdata$steps)
@@ -77,25 +86,26 @@ ggplot(MeanDataByInterval, aes(x = interval, y=steps)) +
   geom_line(color="blue") 
 ```
 
-### Maximum Number of steps in 5-minute interval, on average across all the days in the dataset
+1.  Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
 
 ```{r}
 maxInterval <- MeanDataByInterval[which.max(MeanDataByInterval$steps),]
 maxInterval
 ```
 
-##  Imputing missing values
+Imputing missing values
+-----------------------
 
-### Total number of missing values in the dataset
+1.  Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with 𝙽𝙰s)
 
 ```{r}
 missingVals <- sum(rawdataNA)
 missingVals
 ```
 
-### Strategy for filling in all of the missing values in the dataset.
-### Use mean interval steps from Mean Steps for that interval.
-### new dataset that is equal to the original dataset but with the missing data filled in
+1.  Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
+
+Create a new dataset that is equal to the original dataset but with the missing data filled in.
 
 ```{r}
 # NA's in dataset
@@ -119,12 +129,15 @@ rawdata1$steps[missingData] <- meanVals[as.character(rawdata1$interval[missingDa
 sum(missingData)
 ```
 
+1.  Make a histogram of the total number of steps taken each day and calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+
+
 ```{r}
 # count of NA values
 sum(is.na(rawdata1$steps))
 ```
 
-### histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day
+histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day
 
 ```{r}
 FullSummedDataByDay <- aggregate(rawdata1$steps, by=list(rawdata1$date), sum)
@@ -145,24 +158,26 @@ mean(FullSummedDataByDay$totalsteps)
 median(FullSummedDataByDay$totalsteps)
 ```
 
-###  Do these values differ from the estimates from the first part of the assignment
+Do these values differ from the estimates from the first part of the assignment
 
-#### Yes, he mean is the same but the median has risen 1.19 steps. 
+Yes, he mean is the same but the median has risen 1.19 steps. 
 
-#### Old Mean & Median
+Old Mean & Median
 ```{r}
 mean(stepperday$Total_Steps, na.rm = TRUE)
 median(stepperday$Total_Steps, na.rm = TRUE)
 ```
-#### New Mean and Median
+New Mean and Median
 ```{r}
 mean(FullSummedDataByDay$totalsteps)
 median(FullSummedDataByDay$totalsteps)
 ```
+Are there differences in activity patterns between weekdays and weekends?
+-------------------------------------------------------------------------
 
-### Impact of imputing missing data on the estimates of the total daily number of steps
+1.  Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.
 
-#### The effect of using mean data per interval as a data impute method for missing values seems to push overall data towards the mean.
+Make a panel plot containing a time series plot (i.e. 𝚝𝚢𝚙𝚎 = "𝚕") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). See the README file in the GitHub repository to see an example of what this plot should look like using simulated data.
 
 ```{r}
 rawdata1$weekday <- weekdays(as.Date(rawdata1$date))
