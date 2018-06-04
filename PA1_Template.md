@@ -46,12 +46,12 @@ names(stepperday)[2] ="Total_Steps"
 head(stepperday,5)
 ```
   
-    Date             Total_Steps
-  1 2012-10-01          NA
-  2 2012-10-02         126
-  3 2012-10-03       11352
-  4 2012-10-04       12116
-  5 2012-10-05       13294
+      Date             Total_Steps
+  1:  2012-10-01          NA
+  2:  2012-10-02         126
+  3:  2012-10-03       11352
+  4:  2012-10-04       12116
+  5:  2012-10-05       13294
 
 
 1.  If you do not understand the difference between a histogram and a barplot, research the difference between them. Make a histogram of the total number of steps taken each day.
@@ -61,6 +61,7 @@ ggplot(stepperday, aes(x = Total_Steps)) +
   geom_histogram(fill = "red", binwidth=1000) +
   labs(title = "Total Daily Steps", x = "Steps", y = "Frequency")
 ```
+https://github.com/kamleshmishra18/Reproducible-Reserach-2/blob/master/Figures/Total_Daily_Steps.png
 
 1.  Calculate and report the mean and median of the total number of steps taken per day
 
