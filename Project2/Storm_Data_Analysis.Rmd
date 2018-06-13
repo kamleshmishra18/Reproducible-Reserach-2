@@ -1,0 +1,126 @@
+---
+title : "Economic and Physical Impact of Weather Events Across America"
+author: "Kamlesh Mishra"
+date: "June 12, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+# Synopsis
+
+The National Weather Service Storm data is read and analyzed in order to determine the types of storm events that are the most harmful to population health as well as the highest economic consequences. The data shows that the biggest source of property damage in the United States comes from Tornados and is followed by Floods and Flash Flood sources. The highest contributor to crop damage in the United States comes from hail and is followed by flood and flash floods. The highest source of injuries and fatalities from weather events both come from tornados. The second highest fatality source comes from flood sources and is followed by lightning then wind. The second largest source of injuries comes from wind followed by lightning sources.  
+
+# Data Processing
+
+The following is the reading and initialization of the dataset:
+```{r}
+# Read and initialize library and data
+    library(ggplot2)
+    library(grid)
+    library(gridExtra)
+    library(plyr)
+    library(data.table)
+
+# Cache and reads data if available
+    stormData = read.csv('~/repdata_data_StormData.csv', stringsAsFactors=FALSE)    
+
+# Subsets all relevant data for usage
+    stormDataRed <- stormData[,c("EVTYPE", "FATALITIES", "INJURIES",        "PROPDMG","PROPDMGEXP","CROPDMG","CROPDMGEXP")]
+```
+# Cleaning of the data into clean and tidy datasets. 
+
+The fatalaties as well as the injuries are summarized according to the event type and then, respectively, ordered decreasingly.
+
+```{r}
+harm2health <- ddply(stormDataRed, .(EVTYPE), summarize,fatalities = sum(FATALITIES),injuries = sum(INJURIES))
+fatal <- harm2health[order(harm2health$fatalities, decreasing = T), ]
+injury <- harm2health[order(harm2health$injuries, decreasing = T), ]
+```
+
+# Economic Consequences
+
+Since the exponential values are stored in a seperate column describing their value with letters (h = hundred, k = thousand, m = million, b = billion), the calucalion of the financial damage turns out to be slightly tricky. In a first step a function that converts the letter value of the exponent to a usable number must be implemented.
+
+```{r}
+getExp <- function(e) {
+    if (e %in% c("h", "H")) return(2)
+    else if (e %in% c("k", "K")) return(3)
+    else if (e %in% c("m", "M")) return(6)
+    else if (e %in% c("b", "B")) return(9)
+    else if (!is.na(as.numeric(e)))  return(as.numeric(e))
+    else if (e %in% c("", "-", "?", "+")) return(0)
+    else {stop("Invalid value.")}
+}
+
+#Now, using this function, the proper values are calculated for property damage and crop damage
+
+propExp <- sapply(stormDataRed$PROPDMGEXP, FUN=getExp)
+stormDataRed$propDamage <- stormDataRed$PROPDMG * (10 ** propExp)
+cropExp <- sapply(stormDataRed$CROPDMGEXP, FUN=getExp)
+stormDataRed$cropDamage <- stormDataRed$CROPDMG * (10 ** cropExp)
+
+# Now the financial damage for crops and property have to be summarized according to the event type,
+
+econDamage <- ddply(stormDataRed, .(EVTYPE), summarize,propDamage = sum(propDamage), cropDamage = sum(cropDamage))
+
+# Lets remove events not causing any financial damage,
+
+econDamage <- econDamage[(econDamage$propDamage > 0 | econDamage$cropDamage > 0), ]
+
+# and finally, the data is sorted decreasingly:
+
+propDmgSorted <- econDamage[order(econDamage$propDamage, decreasing = T), ]
+cropDmgSorted <- econDamage[order(econDamage$cropDamage, decreasing = T), ]
+```
+
+# Results
+
+## Effects on population health
+### Lists of the Top 5 weather events affecting the populations health (injuries and deaths) are shown. For injuries as well as fatal events the most devastating events are tornados in the given time period.
+```{r}
+head(injury[, c("EVTYPE", "injuries")],5)
+head(fatal[, c("EVTYPE", "fatalities")],5)
+# The plots of the Top 10 events paint an even clearer picture:
+p1 <- ggplot(data=head(injury,10), aes(x=reorder(EVTYPE, injuries), y=injuries)) +
+   geom_bar(fill="olivedrab",stat="identity")  + coord_flip() + 
+    ylab("Total number of injuries") + xlab("Event type") +
+    ggtitle("Health impact of weather events in the US - Top 10") +
+    theme(legend.position="none")
+
+p2 <- ggplot(data=head(fatal,10), aes(x=reorder(EVTYPE, fatalities), y=fatalities)) +
+    geom_bar(fill="red4",stat="identity") + coord_flip() +
+    ylab("Total number of fatalities") + xlab("Event type") +
+    theme(legend.position="none")
+
+grid.arrange(p1, p2, nrow =2)
+```
+
+## Economic Consequences
+### Lists of the Top 5 weather events causing financial damage to both property and crops are shown below. For property flash floods, thunderstorms and tornados seem to cause by far the most damage (orders of magnitude above the other event types!). Probably little suprising the weather event causing most financial damage in respect to agriculture (i.e. crops) is drought. Noteworthy damage is also done by flood events as well as hail and ice storms.
+
+```{r}
+head(propDmgSorted[, c("EVTYPE", "propDamage")], 5)
+head(cropDmgSorted[, c("EVTYPE", "cropDamage")], 5)
+
+p1 <- ggplot(data=head(propDmgSorted,10), aes(x=reorder(EVTYPE, propDamage), y=log10(propDamage), fill=propDamage )) +
+    geom_bar(fill="darkred", stat="identity") + coord_flip() +
+    xlab("Event type") + ylab("Property damage in dollars (log10)") +
+    ggtitle("Economic impact of weather events in the US - Top 10") +
+    theme(plot.title = element_text(hjust = 0))
+
+p2 <- ggplot(data=head(cropDmgSorted,10), aes(x=reorder(EVTYPE, cropDamage), y=cropDamage, fill=cropDamage)) +
+    geom_bar(fill="goldenrod", stat="identity") + coord_flip() + 
+    xlab("Event type") + ylab("Crop damage in dollars") + 
+    theme(legend.position="none")
+
+grid.arrange(p1, p2, ncol=1, nrow =2)
+```
